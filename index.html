@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <script>
+   (function () {
+  var proto = XMLHttpRequest.prototype;
+  var open = proto.open, setRequestHeader = proto.setRequestHeader, send = proto.send;
+  var TOKEN_KEY = 'base44_access_token';
+  var storedTokenHeader = function () {
+    try { return 'Bearer ' + localStorage.getItem(TOKEN_KEY); } catch (e) { return null; }
+  };
+  var forgetStoredToken = function () {
+    try { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem('token'); } catch (e) {}
+  };
+
+  proto.open = function (method, url) {
+    this.__b44IsAuthCheck = /\/entities\/User\/me(\?|$)/.test(url);
+    return open.apply(this, arguments);
+  };
+
+  proto.setRequestHeader = function (name, value) {
+    if (this.__b44IsAuthCheck && name.toLowerCase() === 'authorization' && value === storedTokenHeader()) {
+      this.__b44SentToken = value;
+    }
+    return setRequestHeader.call(this, name, value);
+  };
+
+  proto.send = function () {
+    this.addEventListener('loadend', function () {
+      var rejectedTokenStillStored = this.status === 401 && this.__b44SentToken === storedTokenHeader();
+      if (rejectedTokenStillStored) forgetStoredToken();
+    });
+    return send.apply(this, arguments);
+  };
+})();
+  </script>
+  <meta charset="utf-8"/>
+  <link href="https://media.base44.com/images/public/6ac50ffa7284b1a48de47df2/c75c0416e_logo.png" rel="icon" type="image/svg+xml"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <link href="./manifest.json" rel="manifest"/>
+  <title>
+   Dahab Loan Tracker
+  </title>
+  <!-- Supabase CDN Client Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script crossorigin="" src="./assets/index-CAOrVafs.js" type="module">
+  </script>
+  <link crossorigin="" href="./assets/index-C-qHOx-Q.css" rel="stylesheet"/>
+  <script type="module">
+   if (window.self === window.top) {
+  let lastPath = "";
+  function getPageNameFromPath(path) {
+    const segments = path.split("/").filter(Boolean);
+    return segments[0] || null;
+  }
+  function trackPageView() {
+    const path = window.location.pathname;
+    if (path === lastPath) return;
+    lastPath = path;
+    const pageName = getPageNameFromPath(path) || "home";
+    const appId = "6ac50ffa7284b1a48de47df2";
+    if (!appId) return;
+    fetch(`/api/app-logs/${appId}/log-user-in-app/${pageName}`, {
+      method: "POST",
+    }).catch(() => {});
+  }
+  const originalPushState = history.pushState.bind(history);
+  history.pushState = function (...args) {
+    originalPushState(...args);
+    trackPageView();
+  };
+  const originalReplaceState = history.replaceState.bind(history);
+  history.replaceState = function (...args) {
+    originalReplaceState(...args);
+    trackPageView();
+  };
+  window.addEventListener("popstate", trackPageView);
+  trackPageView();
+}
+  </script>
+  <meta content="yes" name="mobile-web-app-capable"/>
+  <meta content="black" name="apple-mobile-web-app-status-bar-style"/>
+  <meta content="Dahab Loan Tracker" name="apple-mobile-web-app-title"/>
+  <script async="true" data-app-id="6ac50ffa7284b1a48de47df2" data-platform-url="https://app.base44.com" src="./static/js/badge.js">
+  </script>
+ </head>
+ <body>
+  <div id="root">
+  </div>
+
+  <!-- Supabase Form Submission Handler -->
+  <script>
+    const SUPABASE_URL = 'https://dfxemwmoacgxbiXteupf.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_UMVjykNPjux5g0ZzqfzmhQ_n0iIE';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    document.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = {
+        name: document.getElementById('name')?.value || '',
+        phone: document.getElementById('phone')?.value || '',
+        email: document.getElementById('email')?.value || '',
+        national_id: document.getElementById('national_id')?.value || '',
+        date_of_birth: document.getElementById('date_of_birth')?.value || '',
+        gender: document.getElementById('gender')?.value || ''
+      };
+
+      const { data, error } = await supabaseClient
+        .from('submissions')
+        .insert([formData]);
+
+      if (error) {
+        console.error('Error submitting form:', error.message);
+        alert('Submission failed: ' + error.message);
+      } else {
+        alert('Application submitted successfully!');
+        e.target.reset();
+      }
+    });
+  </script>
+ </body>
+</html>
